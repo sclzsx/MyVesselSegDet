@@ -8,7 +8,7 @@ from Nets.LaneNet0508 import LaneNet0508
 import torch
 import torch.nn as nn
 
-from torchsummary import summary
+# from torchsummary import summary
 
 from lr_scheduler import *
 
@@ -61,4 +61,4 @@ if __name__ == '__main__':
     ]
 
     # batch_cal_comlexity(net_names, resizes, out_channels=2, method=0)
-    summary(choose_net(net_names[0], 2).cuda(), (3, resizes[0][0], resizes[0][1]))
+    # summary(choose_net(net_names[0], 2).cuda(), (3, resizes[0][0], resizes[0][1]))

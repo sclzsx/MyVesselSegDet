@@ -77,7 +77,7 @@ def do_test(mode, args):
     net.load_state_dict(torch.load(pt_path))
     net.eval()
     test_loader, class_weights = None, None
-    if mode == 0 or mode == 1:
+    if mode == 0:
         test_set = SegDataset(args.test_set, args.out_channels, appoint_size=(args.height, args.width), dilate=0)
         test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False, num_workers=0)
         class_weights = get_class_weights(test_loader, args.out_channels, args.weighting)
@@ -86,7 +86,7 @@ def do_test(mode, args):
         eval_dataset_full(net, args.out_channels, test_loader, class_weights=class_weights, save_dir=pt_dir)
 
     elif mode == 1:
-        dst_wh = (500 // 16 * 16, 1260 // 16 * 16)
+        dst_wh = (512 // 16 * 16, 512 // 16 * 16)
         predict_images(net, args, dst_wh=dst_wh, save_dir=args.save_dir)
 
 
@@ -95,16 +95,16 @@ def do_search(args, task=0):
     pt_dirs = []
 
     if task == 0:
-        args.test_set = 'data/KolektorSDD_split/test'
+        args.test_set = 'my_datasets/seg/preprocessed_aug/test'
         args.save_dir = './Results_test_images'
-        args.test_images = 'data/KolektorSDD_split/test'
+        args.test_images = 'my_datasets/seg/preprocessed_aug/test'
         args.out_channels = 2
 
         exp_keyword = 'seg'
 
         pt_dirs = [i.name for i in Path(args.pt_root).iterdir() if i.is_dir() and exp_keyword in i.name]
 
-    modes = [0, 1]
+    modes = [1]
     for mode in modes:
         for pt_dir in pt_dirs:
             args.pt_dir = pt_dir

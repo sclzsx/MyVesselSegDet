@@ -12,6 +12,7 @@ from collections import OrderedDict, Counter
 import random
 from utils import add_mask_to_source_multi_classes, add_mask_to_source
 from pathlib import Path
+from preprocess_data import cv2_preprocess_eye
 
 def get_class_weights(loader, out_channels, weighting):
     print('Weighting method is:{}, please wait.'.format(weighting))
@@ -46,36 +47,39 @@ class PILToLongTensor(object):
 
 
 class SegDataset(Dataset):
-    def __init__(self, dataset_dir, num_classes=2, appoint_size=(512, 512), dilate=0):
-        self.img_paths = [i for i in Path(dataset_dir).rglob('*.jpg')]
+    def __init__(self, dataset_dir, num_classes=2, appoint_size=(512, 512), dilate=0, preprocess=None):
+        self.lab_paths = [i for i in Path(dataset_dir).glob('*_lab.png')]
         self.num_classes = num_classes
         self.appoint_size = appoint_size
         self.dilate = dilate
+        self.preprocess = preprocess
+        # print(self.lab_paths)
 
     def __len__(self):
-        return len(self.img_paths)
+        return len(self.lab_paths)
 
     def __getitem__(self, i):
-        img_path = self.img_paths[i]
-        class_name = img_path.parent.name
+        lab_path = self.lab_paths[i]
+
+        class_name = lab_path.parent.name
         if class_name == 'ng':
             class_id = 1
         else:
             class_id = 0
-        
         class_tensor = torch.tensor([class_id], dtype=torch.long)
 
-        img_path = str(img_path)
-        mask_path = str(img_path).replace('.jpg', '.bmp')
+        mask_path = str(lab_path)
+        img_path = str(lab_path).replace('_lab', '')
 
-        # print(img_path, mask_path)
-        
-        image = cv2.imread(img_path)
+        if self.preprocess is not None:
+            image = self.preprocess(img_path)
+        else:
+            image = cv2.imread(img_path, 0)
+        # print(image.shape, image.dtype)
+
         mask = Image.open(mask_path).convert('L')
-
         mask_np = np.array(mask)
         mask_np[mask_np > 0] = 1
-        # print(mask_np.shape)
         mask = Image.fromarray(mask_np)
 
         img_transform = transforms.Compose(
@@ -97,7 +101,12 @@ class SegDataset(Dataset):
 
         check = 0
         if check:
+            img_check = np.array(img_tensor.permute(1, 2, 0).squeeze())
             mask_check = np.array(mask_tensor)
+            show = img_check + mask_check
+            plt.imshow(show)
+            plt.show()
+
             mask_dict = Counter(mask_check.flatten())
             mask_list = [j for j in range(self.num_classes)]
             for k, v in mask_dict.items():
@@ -115,9 +124,9 @@ if __name__ == '__main__':
 
     num_classes = 2
     appoint_size = (512, 512)
-    dataset_dir = 'data/KolektorSDD_split/test'
+    dataset_dir = 'my_datasets/seg/preprocessed_aug/test'
 
-    dataset = SegDataset(dataset_dir, num_classes=num_classes, appoint_size=appoint_size, dilate=0)
+    dataset = SegDataset(dataset_dir, num_classes=num_classes, appoint_size=appoint_size, dilate=0, preprocess=None)
 
     loader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, batch_data in enumerate(loader):

@@ -105,9 +105,14 @@ def predict_images(net, args, dst_wh=(512, 512), save_dir=None, num_classes=2):
     pred_dicts = []
 
     times = []
-    paths = [i for i in Path(args.test_images).rglob('*.jpg')]
+    paths = [i for i in Path(args.test_images).rglob('*.png')]
     for path in paths:
-        frame = cv2.imread(str(path))
+        if 'lab' in path.name:
+            continue
+
+        # frame = cv2.imread(str(path), 0)
+        from preprocess_data import cv2_preprocess_eye
+        frame, lab, mask = cv2_preprocess_eye(str(path), None)
         start = time.time()
 
         img_transform = transforms.Compose(
@@ -127,7 +132,9 @@ def predict_images(net, args, dst_wh=(512, 512), save_dir=None, num_classes=2):
         pred_dicts.append(pred_dict2)
         print(pred_dict2)
 
-        dst_show = add_mask_to_source_multi_classes(dst_frame, dst_prediction, args.out_channels)
+        # dst_show = add_mask_to_source_multi_classes(dst_frame, dst_prediction, args.out_channels)
+
+        dst_show = (dst_prediction * mask).astype('uint8') * 255
 
         torch.cuda.synchronize()
         end = time.time()
@@ -140,6 +147,6 @@ def predict_images(net, args, dst_wh=(512, 512), save_dir=None, num_classes=2):
             plt.imshow(dst_show)
             plt.pause(0.5)
 
-    if save_dir is not None:
-        with open(save_dir + '/pred_dicts-' + args.pt_dir + '-' + path.name + '.json', 'w') as f:
-            json.dump(pred_dicts, f, indent=2)
+    # if save_dir is not None:
+    #     with open(save_dir + '/pred_dicts-' + args.pt_dir + '-' + path.name + '.json', 'w') as f:
+    #         json.dump(pred_dicts, f, indent=2)

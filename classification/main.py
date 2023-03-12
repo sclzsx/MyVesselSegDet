@@ -18,6 +18,12 @@ from modules.builder import generate_model
 
 def main():
     args = parse_config()
+
+    # args.config = 'configs/eyepacs_binary_laddernet_rgba.yaml'
+    # args.config = 'configs/eyepacs_binary_laddernet_sharpen.yaml'
+    # args.config = 'configs/eyepacs_binary_laddernet.yaml'
+    # args.config = 'configs/eyepacs_binary_rgb.yaml'
+
     cfg = load_config(args.config)
 
     # print configuration

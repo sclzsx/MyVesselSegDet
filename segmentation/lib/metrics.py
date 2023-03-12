@@ -1,6 +1,7 @@
 """
 This part contains functions related to the calculation of performance indicators
 """
+from inspect import trace
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import confusion_matrix
@@ -41,7 +42,12 @@ class Evaluate():
     
     # Plot ROC and calculate AUC of ROC
     def auc_roc(self,plot=False):
-        AUC_ROC = roc_auc_score(self.target, self.output)
+        target = self.target
+        output = self.output
+        # target = np.where(target > 0.5, 1, 0).astype('uint8')
+        # output = np.where(output > 0.5, 1, 0).astype('uint8')
+        # print(target.shape, output.shape, target.dtype, output.dtype, target[:10], output[:10])
+        AUC_ROC = roc_auc_score(target, output)
         # print("\nAUC of ROC curve: " + str(AUC_ROC))
         if plot and self.save_path is not None:
             fpr, tpr, thresholds = roc_curve(self.target, self.output)

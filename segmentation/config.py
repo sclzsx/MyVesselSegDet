@@ -4,9 +4,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # in/out
-    parser.add_argument('--outf', default='./experiments',
+    parser.add_argument('--outf', default='../results/segmentation',
                         help='trained model will be saved at here')
-    parser.add_argument('--save', default='UNet_vessel_seg',
+    parser.add_argument('--save', default='vessel_laddernet',
                         help='save name of experiment in args.outf directory')
 
     # data

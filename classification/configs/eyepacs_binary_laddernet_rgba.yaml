@@ -1,8 +1,8 @@
 base:
   data_path: ../datasets/eyepacs_binary_laddernet_rgba
   data_index: null # alternative way to build dataset. check README for more details
-  save_path: results/binary_laddernet_rgba
-  log_path: results/binary_laddernet_rgba
+  save_path: ../results/classification/binary_laddernet_rgba
+  log_path: ../results/classification/binary_laddernet_rgba
   device: cuda
   random_seed: 1 # set to -1 to disable random seed
   cudnn_deterministic: true # set to True to turn on CUDNN deterministic setting, but it may slow down your training

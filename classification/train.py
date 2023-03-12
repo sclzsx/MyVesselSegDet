@@ -7,6 +7,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.distributed import all_reduce, all_gather, ReduceOp
+from tqdm import tqdm
 
 from utils.func import *
 from modules.loss import *
@@ -163,7 +164,7 @@ def eval(cfg, model, dataloader, criterion, estimator, device):
     torch.set_grad_enabled(False)
 
     estimator.reset()
-    for test_data in dataloader:
+    for test_data in tqdm(dataloader):
         X, y = test_data
         X = X.cuda(cfg.dist.gpu) if cfg.dist.distributed else X.to(device)
         y = y.cuda(cfg.dist.gpu) if cfg.dist.distributed else y.to(device)

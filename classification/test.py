@@ -20,14 +20,14 @@ def main():
     args = parse_config()
 
     # args.config = 'configs/eyepacs_binary_laddernet_rgba.yaml' # 0.541644
-    args.config = 'configs/eyepacs_binary_laddernet_sharpen.yaml' # 0.854917
+    # args.config = 'configs/eyepacs_binary_laddernet_sharpen.yaml' # 0.854917
     # args.config = 'configs/eyepacs_binary_laddernet.yaml' # 0.544062
     # args.config = 'configs/eyepacs_binary_rgb.yaml' # 0.851961
 
     cfg = load_config(args.config)
 
-    cfg.train.batch_size = 8
-    cfg.train.num_workers = 4
+    # cfg.train.batch_size = 8
+    # cfg.train.num_workers = 4
 
     # print configuration
     if args.print_config:

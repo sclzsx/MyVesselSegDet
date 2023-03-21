@@ -8,8 +8,8 @@ import shutil
 import torch
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from VesselSeg.models.LadderNet import LadderNet
-from VesselSeg.lib.pre_processing import my_PreProc
+from segmentation.models.LadderNet import LadderNet
+from segmentation.lib.pre_processing import my_PreProc
 import pandas as pd
 
 def mkdir(d):
@@ -121,10 +121,55 @@ def split_2_classes(): # 把eyepacs_kaggle分为2类
 
             j += 1
 
+def split_2_classes_small(): # 把eyepacs_kaggle分为2类
+    label = np.array(pd.read_csv('datasets/eyepacs_kaggle/trainLabels.csv'))
+    print(label.shape)
+
+    N, P = [], []
+    for i in range(label.shape[0]):
+        name = label[i, 0]
+        lab = label[i, 1]
+        if lab > 0:
+            N.append(name)
+        else:
+            P.append(name)
+
+    random.shuffle(N)
+    random.shuffle(P)
+    print(len(N), len(P))
+
+    lenN = min(len(N), len(P))
+    P = P[:lenN]
+    N = N[:lenN]
+
+    rate = 0.2
+
+    L = [P, N]
+    for i in range(2):
+        c = L[i]
+        n = int(len(c) * rate)
+        j = 0
+        for name in tqdm(c):
+
+            if j < n:
+                DIR = 'datasets/eyepacs_binary_rgb/test/' + str(i)
+            elif j >=n and j < n*2:
+                DIR = 'datasets/eyepacs_binary_rgb/val/' + str(i)
+            else:
+                DIR = 'datasets/eyepacs_binary_rgb/train/' + str(i)
+
+            mkdir(DIR)
+
+            img = Image.open('datasets/eyepacs_kaggle/images/' + name + '.jpeg').convert('RGB')
+            img = img.resize((512, 512), Image.ANTIALIAS)
+            img.save(DIR + '/' + name + '.png')
+
+            j += 1
+
 def laddernet_seg_eye(img_path, save_path, unit_mode):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = LadderNet(inplanes=1, num_classes=2, layers=3, filters=16).to(device)
-    checkpoint = torch.load('VesselSeg/experiments/UNet_vessel_seg/best_model.pth')
+    checkpoint = torch.load('results/segmentation/vessel_laddernet/best_model.pth')
     net.load_state_dict(checkpoint['net'])
     net.eval()
 
@@ -179,11 +224,11 @@ def segment_all_imgs(root, save_root_name, unit_mode):
 
 if __name__ == '__main__':
     # 把eyepacs_kaggle分为2类,存到eyepacs_binary_rgb
-    split_2_classes()
+    # split_2_classes()
 
     # 把eyepacs_binary_rgb分割锐化，作为分类网络的预处理
-    segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet', unit_mode=0)
+    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet', unit_mode=0)
 
-    segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet_rgba', unit_mode=1)
+    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet_rgba', unit_mode=1)
 
-    segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet_sharpen', unit_mode=2)
+    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet_sharpen', unit_mode=2)

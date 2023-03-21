@@ -7,12 +7,11 @@ from pathlib import Path
 import random
 import shutil
 import torch
-from segment.UNet import UNet
 from torchvision import transforms
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from VesselSeg.models.LadderNet import LadderNet
-from VesselSeg.lib.pre_processing import my_PreProc
+from segmentation.models.LadderNet import LadderNet
+from segmentation.lib.pre_processing import my_PreProc
 
 def mkdir(d):
     if not os.path.exists(d):

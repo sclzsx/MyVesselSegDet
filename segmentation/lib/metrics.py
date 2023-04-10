@@ -44,9 +44,9 @@ class Evaluate():
     def auc_roc(self,plot=False):
         target = self.target
         output = self.output
-        # target = np.where(target > 0.5, 1, 0).astype('uint8')
-        # output = np.where(output > 0.5, 1, 0).astype('uint8')
-        # print(target.shape, output.shape, target.dtype, output.dtype, target[:10], output[:10])
+        target = np.where(target > 0.5, 1, 0).astype('float64')
+        # output = np.where(output > 0.5, 1, 0).astype('float64')
+        print(target.shape, output.shape, target.dtype, output.dtype, target[:10], output[:10])
         AUC_ROC = roc_auc_score(target, output)
         # print("\nAUC of ROC curve: " + str(AUC_ROC))
         if plot and self.save_path is not None:

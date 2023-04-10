@@ -7,6 +7,7 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 from torchvision import models, transforms, datasets
 import torch.nn as nn
 
+
 class VGG19(nn.Module):
     def __init__(self, num_classes, pretrained=False):
         super(VGG19, self).__init__()
@@ -32,6 +33,7 @@ class VGG19(nn.Module):
     # hook
     def activation_hook(self, grad):
         self.gradients = grad
+
     # extract gradient
     def get_activation_gradient(self):
         return self.gradients
@@ -51,13 +53,14 @@ class VGG19(nn.Module):
         # print(x.shape)
         x = self.avgpool(x)
         # print(x.shape)
-        x = x.view(-1, 512*7*7)
+        x = x.view(-1, 512 * 7 * 7)
         # print(x.shape)
         x = self.classifier(x)
         # print(x.shape)
         return x
 
-def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_threshold):
+
+def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_threshold, pred_num):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -82,13 +85,13 @@ def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_thresh
     model.cuda()
     labels, preds = [], []
 
-    for cnt, (img, label) in enumerate(dataloader): 
-        if cnt > pred_num and pred_num > 0: 
+    for cnt, (img, label) in enumerate(dataloader):
+        if cnt > pred_num and pred_num > 0:
             break
 
         img = img.cuda()
         pred = model(img)
-        
+
         # likelihood distribution
         distribution = pred
 
@@ -134,7 +137,7 @@ def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_thresh
         det = img_np
 
         H, W, C = img_np.shape
-        
+
         fig = plt.figure(figsize=(24, 8))
 
         ax = fig.add_subplot(131)
@@ -163,8 +166,8 @@ def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_thresh
                     if area > max_area:
                         max_contour = c
                         max_area = area
-                    [x , y, w, h] = cv2.boundingRect(max_contour)
-                rect = plt.Rectangle((x, y), w, h, fill=False, edgecolor='red',linewidth=2)
+                    [x, y, w, h] = cv2.boundingRect(max_contour)
+                rect = plt.Rectangle((x, y), w, h, fill=False, edgecolor='red', linewidth=2)
                 ax.add_patch(rect)
         ax.imshow(img_np)
         plt.savefig(save_dir + '/' + str(cnt) + '.jpg')
@@ -180,6 +183,7 @@ def detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_thresh
     for metric in metrics.items():
         print(metric)
 
+
 if __name__ == '__main__':
     pt_path = 'results/classification/binary_rgb/best_validation_weights.pt'
     input_size = 512
@@ -190,5 +194,4 @@ if __name__ == '__main__':
     save_dir = 'results/detection'
     anomaly_threshold = 0.5
 
-    detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_threshold)
-
+    detection(data_dir, pt_path, input_size, mean, std, save_dir, anomaly_threshold, pred_num)

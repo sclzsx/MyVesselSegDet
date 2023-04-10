@@ -12,6 +12,8 @@ from segmentation.models.LadderNet import LadderNet
 from segmentation.lib.pre_processing import my_PreProc
 import pandas as pd
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def mkdir(d):
     if not os.path.exists(d):
         os.makedirs(d)
@@ -166,13 +168,7 @@ def split_2_classes_small(): # 把eyepacs_kaggle分为2类
 
             j += 1
 
-def laddernet_seg_eye(img_path, save_path, unit_mode):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net = LadderNet(inplanes=1, num_classes=2, layers=3, filters=16).to(device)
-    checkpoint = torch.load('results/segmentation/vessel_laddernet/best_model.pth')
-    net.load_state_dict(checkpoint['net'])
-    net.eval()
-
+def laddernet_seg_eye(net, img_path, save_path, unit_mode):
     data = Image.open(img_path).convert('RGB')
     rgb = np.array(data)
     data = rgb.transpose((2, 0, 1))
@@ -208,18 +204,24 @@ def laddernet_seg_eye(img_path, save_path, unit_mode):
     out.save(save_path)
 
 def segment_all_imgs(root, save_root_name, unit_mode):
+    net = LadderNet(inplanes=1, num_classes=2, layers=3, filters=16).to(device)
+    checkpoint = torch.load('results/segmentation/vessel_laddernet/best_model.pth')
+    net.load_state_dict(checkpoint['net'])
+    net.eval()
+
     root_name = Path(root).name
-    for img_path in Path(root).rglob('*.*'):
+    img_paths = [i for i in Path(root).rglob('*.*')]
+    for img_path in tqdm(img_paths):
         img_path = str(img_path)
         save_path = img_path.replace(root_name, save_root_name).replace('jpeg', 'jpg')
 
         if os.path.exists(save_path):
             continue
 
-        print(save_path)
+        # print(save_path)
         mkdir(str(Path(save_path).parent))
 
-        laddernet_seg_eye(img_path, save_path, unit_mode=unit_mode)
+        laddernet_seg_eye(net, img_path, save_path, unit_mode=unit_mode)
 
 
 if __name__ == '__main__':
@@ -227,8 +229,8 @@ if __name__ == '__main__':
     # split_2_classes()
 
     # 把eyepacs_binary_rgb分割锐化，作为分类网络的预处理
-    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet', unit_mode=0)
+    # segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet', unit_mode=0)
+    #
+    # segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet_rgba', unit_mode=1)
 
-    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet_rgba', unit_mode=1)
-
-    segment_all_imgs('datasets/eyepacs_binary_rgb_tiny', 'eyepacs_binary_laddernet_sharpen', unit_mode=2)
+    segment_all_imgs('datasets/eyepacs_binary_rgb', 'eyepacs_binary_laddernet_sharpen', unit_mode=2)

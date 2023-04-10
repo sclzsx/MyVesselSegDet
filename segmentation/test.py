@@ -108,7 +108,6 @@ if __name__ == '__main__':
     sys.stdout = Print_Logger(os.path.join(save_path, 'test_log.txt'))
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-
     # net = models.UNetFamily.Dense_Unet(1,2).to(device)
     net = models.LadderNet(inplanes=1, num_classes=2, layers=3, filters=16).to(device)
     cudnn.benchmark = True

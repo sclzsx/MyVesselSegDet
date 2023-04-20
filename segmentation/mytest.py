@@ -1,31 +1,14 @@
-# import joblib,copy
-# import torch.backends.cudnn as cudnn
-# from torch.utils.data import DataLoader
 import os.path
-
 import torch
-# from tqdm import tqdm
-#
-# from collections import OrderedDict
-# from lib.visualize import save_img,group_images,concat_result
-# import os
-# import argparse
-# from lib.logger import Logger, Print_Logger
 from lib.extract_patches import *
-# from os.path import join
-# from lib.dataset import TestDataset
-# from lib.metrics import Evaluate
-# import models
-# from lib.common import setpu_seed,dict_round
-# from config import parse_args
+import json
 from lib.pre_processing import my_PreProc
 from models.LadderNet import LadderNet
 from PIL import Image
 from pathlib import Path
-from matplotlib import pyplot as plt
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix
 import cv2
 from metric import SegmentationMetric
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -66,6 +49,13 @@ def cal_metric(net, image_path, label_path, mask_path):
     output = np.where(output > 0, 1, 0)
     output = output * mask
 
+    labels = label.flatten()
+    preds = output.flatten()
+    acc = accuracy_score(labels, preds)
+    p = precision_score(labels, preds)
+    r = recall_score(labels, preds)
+    f1 = f1_score(labels, preds)
+
     out_tensor = torch.from_numpy(output).long().unsqueeze(0).unsqueeze(0).to(device)
     label_tensor = torch.from_numpy(label).long().unsqueeze(0).unsqueeze(0).to(device)
 
@@ -78,7 +68,7 @@ def cal_metric(net, image_path, label_path, mask_path):
     show = np.hstack((label, input, output))
     show = (show * 255).astype('uint8')
 
-    return pa, iou, show
+    return acc, p, r, f1, pa, iou, show
 
 
 def mytest(data_dir, save_root):
@@ -100,7 +90,7 @@ def mytest(data_dir, save_root):
     else:
         return
 
-    mPA, mIoU = 0, 0
+    PA, IOU, ACC, P, R, F1 = [], [], [], [], [], []
     cnt = 0
     for label_path in label_paths:
         label_path = str(label_path)
@@ -127,20 +117,31 @@ def mytest(data_dir, save_root):
         net.load_state_dict(checkpoint['net'])
         net.eval()
 
-        pa, iou, show = cal_metric(net, image_path, label_path, mask_path)
+        acc, p, r, f1, pa, iou, show = cal_metric(net, image_path, label_path, mask_path)
+
         cv2.imwrite(save_dir + '/' + str(cnt) + '.jpg', show)
-        mPA += pa
-        mIoU += iou
+
+        ACC.append(acc)
+        P.append(p)
+        R.append(r)
+        F1.append(f1)
+        PA.append(pa)
+        IOU.append(iou)
+
         cnt += 1
-    mPa = mPA / cnt
-    mIoU = mIoU / cnt
+
+    metrics = {
+        'accuracy': sum(ACC) / cnt,
+        'precision': sum(P) / cnt,
+        'recall': sum(R) / cnt,
+        'f1_score': sum(F1) / cnt,
+        'pa': sum(PA) / cnt,
+        'iou': sum(IOU) / cnt,
+    }
+    for metric in metrics.items():
+        print(metric)
     with open(save_path, 'w') as f:
-        f.write('mPA: ')
-        f.write(str(mPa))
-        f.write('\n')
-        f.write('mIoU: ')
-        f.write(str(mIoU))
-        f.write('\n')
+        json.dump(metrics, f, indent=2)
 
 
 if __name__ == '__main__':
